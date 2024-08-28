@@ -1,8 +1,9 @@
+from urllib.parse import unquote
 import PySimpleGUI as sg
 import os
 #sg.theme('DarkAmber')    # Keep things interesting for your users
 layout = [[sg.Text('选择目录然后输入文件名进行替换')],[sg.Text('支持格式 psd png jpg')],
-          [sg.FolderBrowse("选择文件夹",target="input")],
+          [sg.FolderBrowse("选择文件夹",target="input",enable_events=True,key="test"),sg.Button('处理乱码')],
           [sg.In(key="input")],
           [sg.Text("原文件名:")],
           [sg.Input(key='-before-')],
@@ -12,10 +13,27 @@ layout = [[sg.Text('选择目录然后输入文件名进行替换')],[sg.Text('�
 window = sg.Window('文件名替换程序', layout)
 while True:                            
     event, values = window.read() 
+    print(event)
+    print(values)
     if event == sg.WIN_CLOSED or event == 'Exit':
         break 
     elif not values['input']:
         sg.popup("请选择文件夹")
+    elif event == '处理乱码':
+        print(' star decode')
+        path = values['input']
+        os.chdir(path)
+        filenamelist = list(filter(lambda name:(values['-before-'] in name) and ((".psd" in name) or (".jpg" in name) or (".png" in name))   ,os.listdir(path)))
+        if len(filenamelist):
+            for name in filenamelist :
+                old=name
+                new= unquote(old)
+                print(old,new)
+                os.rename(old,new)
+            #print(path,filenamelist)
+            sg.popup_ok("处理成功")
+        else:
+            sg.popup_ok("无可操作文件")
     elif not values['-before-']:
         sg.popup("请输入原文件名")
     elif not values['-after-']:
@@ -28,6 +46,7 @@ while True:
         if len(filenamelist):
             for name in filenamelist :
                 old=name
+                old=unquote(old)
                 new=old.replace(values['-before-'],values['-after-'])
                 print(old,new)
                 os.rename(old,new)
